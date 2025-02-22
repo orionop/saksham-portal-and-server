@@ -2,3 +2,4 @@ fastapi
 opencv-python
 asyncio
 uvicorn[standard]
+ultralytics
