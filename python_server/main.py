@@ -41,16 +41,18 @@ if GPIO:
 
 app = FastAPI()
 
-def generate_camera_stream(camera_index: int):
+def generate_camera_stream(camera_index: int,run_inference=False):
     cap = cv2.VideoCapture(camera_index)
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
             break
-        
-        results = model(frame)
-        annotated_frame = results[0].plot()
-        _, jpeg = cv2.imencode('.jpg', annotated_frame)
+        if run_inference:
+            results = model(frame)
+            annotated_frame = results[0].plot()
+            _, jpeg = cv2.imencode('.jpg', annotated_frame)
+        else:
+            _, jpeg = cv2.imencode('.jpg', frame)
         yield (b"--frame\r\n"
                b"Content-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n")
     cap.release()
@@ -83,11 +85,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/camera1")
 def camera1():
-    return StreamingResponse(generate_camera_stream(0), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(generate_camera_stream(0,run_inference=True), media_type="multipart/x-mixed-replace; boundary=frame")
 
 @app.get("/camera2")
 def camera2():
-    return StreamingResponse(generate_camera_stream(0), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(generate_camera_stream(1), media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 # MOTORS
