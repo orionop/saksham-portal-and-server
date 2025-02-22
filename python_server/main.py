@@ -17,7 +17,7 @@ LAT,LON = 0.0,0.0
 detected = False
 u_id = 0
 
-GPIO = True
+GPIO = False
 SERIAL = True
 if SERIAL:
     import serial
