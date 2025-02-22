@@ -10,7 +10,7 @@ from ultralytics import YOLO
 model = YOLO('yolov8n.pt')  
 
 
-GPIO = False
+GPIO = True
 if GPIO:
     import RPi.GPIO as gpio
 import time
