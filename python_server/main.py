@@ -6,10 +6,11 @@ import json
 import datetime as dt
 import cv2
 from ultralytics import YOLO
+from fastapi.middleware.cors import CORSMiddleware
 import threading
-import serial
-import time
 
+import time
+origins = ['*']
 model = YOLO('yolov8n.pt')  
 PORT = '/dev/ttyACM0'
 LAT,LON = 0.0,0.0
@@ -17,29 +18,32 @@ detected = False
 u_id = 0
 
 GPIO = True
+SERIAL = True
+if SERIAL:
+    import serial
 if GPIO:
     import RPi.GPIO as gpio
 
 movement_lock = threading.Lock()
 
 current_movement = None
-
-def ser_thread():
-    global detected, u_id
-    ser = serial.Serial(PORT, 9600)
-    ser.reset_input_buffer()
-    while True:
-        if ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8').strip()
-            if line.startswith('motion detected') and not detected:
-                detected = True
-                u_id += 1
-            elif line.startswith('motion ended') and detected:
-                detected = False
-                u_id += 1
-            elif line.startswith('calibration'):
-                print("Waiting for calibration")
-                time.sleep(30)
+if SERIAL:
+    def ser_thread():
+        global detected, u_id
+        ser = serial.Serial(PORT, 9600)
+        ser.reset_input_buffer()
+        while True:
+            if ser.in_waiting > 0:
+                line = ser.readline().decode('utf-8').strip()
+                if line.startswith('motion detected') and not detected:
+                    detected = True
+                    u_id += 1
+                elif line.startswith('motion ended') and detected:
+                    detected = False
+                    u_id += 1
+                elif line.startswith('calibration'):
+                    print("Waiting for calibration")
+                    time.sleep(30)
 
 
 pin_m1 = 5
@@ -62,6 +66,13 @@ if GPIO:
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def generate_camera_stream(camera_index: int,run_inference=False):
     cap = cv2.VideoCapture(camera_index)
@@ -156,7 +167,8 @@ if GPIO:
         return FileResponse('index.html')
     
 if __name__ == "__main__":
-    t = threading.Thread(target=ser_thread)
-    t.start()
+    if SERIAL:
+        t = threading.Thread(target=ser_thread)
+        t.start()
     import uvicorn
     uvicorn.run(app, host="0.0.0.0",port=7090)
