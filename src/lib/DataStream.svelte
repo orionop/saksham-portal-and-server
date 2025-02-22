@@ -16,7 +16,7 @@
   let updateFrequency = 0;
   let lastUpdateTime = Date.now();
 
-  const WS_URL = 'ws://localhost:7090/live'; // Replace with your WebSocket URL
+  const WS_URL = 'ws://saksham.local:7090/live'; // Replace with your WebSocket URL
   // ws://saksham.local:7090/live - when using rpi
   // Calculate update frequency using exponential moving average
   function updateFrequencyStats() {
