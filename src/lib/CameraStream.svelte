@@ -23,7 +23,8 @@
 
   // Replace these URLs with your actual camera stream URLs
   const getStreamUrl = (id: string) => {
-    return `http://saksham.local:7090/camera${id}`;
+    return `http://localhost:7090/camera${id}`;
+    // http://saksham.local:7090/camera${id} when
   };
 
   let imgElement: HTMLImageElement;
