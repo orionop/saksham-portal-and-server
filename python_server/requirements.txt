@@ -4,3 +4,4 @@ asyncio
 uvicorn[standard]
 ultralytics
 pyserial
+RPi.GPIO
