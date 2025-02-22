@@ -8,6 +8,7 @@ import cv2
 from ultralytics import YOLO
 import threading
 import serial
+import time
 
 model = YOLO('yolov8n.pt')  
 PORT = '/dev/ttyACM0'
@@ -36,6 +37,9 @@ def ser_thread():
             elif line.startswith('motion ended') and detected:
                 detected = False
                 u_id += 1
+            elif line.startswith('calibration'):
+                print("Waiting for calibration")
+                time.sleep(30)
 
 
 pin_m1 = 5
@@ -101,7 +105,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 last_id = u_id
                 await asyncio.sleep(1)
             else:
-                print("No new data")
+                # print("No new data")
                 await asyncio.sleep(0.1)
 
                 
