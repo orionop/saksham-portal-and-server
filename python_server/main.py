@@ -128,7 +128,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # ROVER CAMERA, change index when connecting to rpi as needed
 @app.get("/camera1")
 def camera1(): 
-    return StreamingResponse(generate_camera_stream(1,run_inference=True), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(generate_camera_stream(0,run_inference=True), media_type="multipart/x-mixed-replace; boundary=frame")
 
 # DRONE CAMERA, change index when connecting to rpi as needed
 @app.get("/camera2")
