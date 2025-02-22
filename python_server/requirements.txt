@@ -3,3 +3,4 @@ opencv-python
 asyncio
 uvicorn[standard]
 ultralytics
+pyserial
