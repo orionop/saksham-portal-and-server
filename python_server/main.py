@@ -33,7 +33,7 @@ def ser_thread():
             if line.startswith('motion detected') and not detected:
                 detected = True
                 u_id += 1
-            elif line.startswith('no motion detected') and detected:
+            elif line.startswith('motion ended') and detected:
                 detected = False
                 u_id += 1
 
