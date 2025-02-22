@@ -6,18 +6,36 @@ import json
 import datetime as dt
 import cv2
 from ultralytics import YOLO
+import threading
+import serial
 
 model = YOLO('yolov8n.pt')  
-
+PORT = '/dev/ttyACM0'
+LAT,LON = 0.0,0.0
+detected = False
+u_id = 0
 
 GPIO = True
 if GPIO:
     import RPi.GPIO as gpio
-import time
-from threading import Lock
-movement_lock = Lock()
+
+movement_lock = threading.Lock()
+
 current_movement = None
 
+def ser_thread():
+    global detected, u_id
+    ser = serial.Serial(PORT, 9600)
+    ser.reset_input_buffer()
+    while True:
+        if ser.in_waiting > 0:
+            line = ser.readline().decode('utf-8').strip()
+            if line.startswith('motion detected') and not detected:
+                detected = True
+                u_id += 1
+            elif line.startswith('no motion detected') and detected:
+                detected = False
+                u_id += 1
 
 
 pin_m1 = 5
@@ -62,22 +80,31 @@ def generate_camera_stream(camera_index: int,run_inference=False):
 # CAMERAS and DATA
 @app.websocket("/live")
 async def websocket_endpoint(websocket: WebSocket):
+    global detected, u_id
+    
     await websocket.accept()
     try:
+        last_id = None
         while True:
-            
-            data = {
-                "timestamp": dt.datetime.now().isoformat(),
-                "cameraId": '1', 
-                "gasConcentration": 23,
-                "personDetected": False,
-                "coordinates": {
-                    "lat": 0.0,
-                    "lng": 0.0,
+            if last_id != u_id:
+                data = {
+                    "timestamp": dt.datetime.now().isoformat(),
+                    "cameraId": '1', 
+                    "gasConcentration": 23,
+                    "personDetected": detected,
+                    "coordinates": {
+                        "lat": LAT,
+                        "lng": LON,
+                    }
                 }
-            }
-            await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(1)
+                await websocket.send_text(json.dumps(data))
+                last_id = u_id
+                await asyncio.sleep(1)
+            else:
+                print("No new data")
+                await asyncio.sleep(0.1)
+
+                
     except Exception as e:
         print(f"WebSocket error: {e}")
     finally:
@@ -123,3 +150,9 @@ if GPIO:
     @app.get("/")
     async def read_index():
         return FileResponse('index.html')
+    
+if __name__ == "__main__":
+    t = threading.Thread(target=ser_thread)
+    t.start()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0",port=7090)
